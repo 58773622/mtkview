@@ -1,7 +1,6 @@
-use crate::mtk_loaders::{
-    MTKBootRomLoader, MTKPL_MAGIC,
-    gfh_headers::{MtkGfhHeader, gfh_file_info::GfhFileInfo, gfh_types::GFH_TYPES_C_SRC},
-};
+use crate::{BinaryViewResult, mtk_loaders::preloader::{MTKPL_MAGIC, MTKPreloaderLoader, gfh_headers::{
+        MtkGfhHeader, gfh_file_info::GfhFileInfo, gfh_types::GFH_TYPES_C_SRC,
+    }}};
 use base64::prelude::*;
 use binaryninja::{
     architecture::CoreArchitecture,
@@ -19,25 +18,25 @@ use binaryninja::{
 use std::ops::Range;
 use tracing::{debug, info, warn};
 
-pub(crate) type BinaryViewResult<R> = binaryninja::binary_view::Result<R>;
 
-pub struct MTKLoaderBinaryViewType {
+
+pub struct MTKPreloaderBinaryViewType {
     view_type: BinaryViewType,
 }
 
-impl MTKLoaderBinaryViewType {
+impl MTKPreloaderBinaryViewType {
     pub fn new(view_type: BinaryViewType) -> Self {
         Self { view_type }
     }
 }
 
-impl AsRef<BinaryViewType> for MTKLoaderBinaryViewType {
+impl AsRef<BinaryViewType> for MTKPreloaderBinaryViewType {
     fn as_ref(&self) -> &BinaryViewType {
         &self.view_type
     }
 }
 
-impl BinaryViewTypeBase for MTKLoaderBinaryViewType {
+impl BinaryViewTypeBase for MTKPreloaderBinaryViewType {
     fn is_deprecated(&self) -> bool {
         false
     }
@@ -69,14 +68,14 @@ impl BinaryViewTypeBase for MTKLoaderBinaryViewType {
     }
 }
 
-impl CustomBinaryViewType for MTKLoaderBinaryViewType {
+impl CustomBinaryViewType for MTKPreloaderBinaryViewType {
     fn create_custom_view<'builder>(
         &self,
         data: &BinaryView,
         builder: binaryninja::custom_binary_view::CustomViewBuilder<'builder, Self>,
     ) -> binaryninja::binary_view::Result<binaryninja::custom_binary_view::CustomView<'builder>>
     {
-        debug!("Creating MTKLoaderBinaryView from MTKLoaderBinaryViewType");
+        debug!("Creating MTKLoaderBinaryView from MTKPreloaderBinaryViewType");
 
         let bv = builder.create::<MTKLoaderBinaryView>(data, ());
         bv
@@ -97,7 +96,7 @@ unsafe impl CustomBinaryView for MTKLoaderBinaryView {
 
 pub struct MTKLoaderBinaryView {
     inner: binaryninja::rc::Ref<BinaryView>,
-    mtk_br_loader: MTKBootRomLoader,
+    mtk_br_loader: MTKPreloaderLoader,
 }
 
 impl BinaryViewBase for MTKLoaderBinaryView {
@@ -120,7 +119,7 @@ impl MTKLoaderBinaryView {
         let read_buffer = parent_view
             .read_buffer(0, parent_view.len() as usize)
             .ok_or(())?;
-        let mtk_br_loader = MTKBootRomLoader::new(read_buffer)?;
+        let mtk_br_loader = MTKPreloaderLoader::new(read_buffer)?;
         Ok(Self {
             inner: view.to_owned(),
             mtk_br_loader,
@@ -194,7 +193,14 @@ impl MTKLoaderBinaryView {
 
             // Define GFH COMMON for each header... needs refactor?
             let name = pt.name.to_string();
-            self.define_user_type("gfh_common_header", &pt_clone.iter().find(|p| p.name == "gfh_common_header".into()).unwrap().ty);
+            self.define_user_type(
+                "gfh_common_header",
+                &pt_clone
+                    .iter()
+                    .find(|p| p.name == "gfh_common_header".into())
+                    .unwrap()
+                    .ty,
+            );
             let sym = Symbol::builder(
                 SymbolType::Data,
                 &name,
@@ -216,7 +222,7 @@ impl MTKLoaderBinaryView {
 
             self.define_auto_symbol_with_type(&sym, &entry_forced_platform, Some(&*pt.ty))
                 .unwrap();
-        };
+        }
 
         Ok(())
     }
