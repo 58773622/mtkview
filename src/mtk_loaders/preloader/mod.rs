@@ -1,7 +1,7 @@
 use std::{collections::HashMap, fmt, ops::Range};
 
 use binaryninja::{data_buffer::DataBuffer, segment::SegmentFlags};
-use tracing::debug;
+use tracing::{debug, error};
 
 use crate::{
     BinaryViewResult, mtk_loaders::preloader::gfh_headers::{GfhHeader, MtkGfhHeader}
@@ -149,7 +149,10 @@ impl MTKPreloaderLoader {
             &image_data.as_slice()[0..4]
         );
 
-        let gfh_header_info = GfhHeader::load(&image_data, 0).unwrap();
+        let Some(gfh_header_info) = GfhHeader::load(&image_data, 0) else {
+            error!("Unable to load any GFH header.");
+            return Err(());
+        };
 
         let mut parser = Self {
             image_data,

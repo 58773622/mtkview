@@ -1,6 +1,6 @@
 # mtkview
 
-Will load GFH preloader binarie
+Will load GFH preloader binaries
 
 Load MTK binaries:
 - Preloaders
@@ -18,7 +18,7 @@ Load MTK binaries:
 
 ## How to use
 
-After building and installing, open Binary Ninja and select a partition or a raw MTK Preloader binary. The binja view should say `MTK`.
+After building and installing, open Binary Ninja and select a partition or a raw MTK Preloader binary. The binja view should say `MTK <Binary Type>`.
 
 ## Screenshot
 
