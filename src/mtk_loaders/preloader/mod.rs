@@ -4,7 +4,9 @@ use binaryninja::{data_buffer::DataBuffer, segment::SegmentFlags};
 use tracing::{debug, error};
 
 use crate::{
-    BinaryViewResult, mtk_loaders::preloader::gfh_headers::{GfhHeader, MtkGfhHeader}
+    BinaryViewResult,
+    mtk_loaders::preloader::gfh_headers::{GfhHeader, MtkGfhHeader},
+    util::find_magic_first,
 };
 
 pub(crate) mod gfh_headers;
@@ -135,9 +137,7 @@ pub struct MTKPreloaderLoader {
 impl MTKPreloaderLoader {
     pub fn new(data: DataBuffer) -> BinaryViewResult<Self> {
         let mut image_data = data.get_data().to_vec();
-        let offset = if let Some(offset) =
-            MTKPreloaderLoader::find_byte_seq_offset(&image_data, MTKPL_MAGIC)
-        {
+        let offset = if let Some(offset) = find_magic_first(&image_data, MTKPL_MAGIC) {
             offset
         } else {
             0
@@ -409,11 +409,6 @@ impl MTKPreloaderLoader {
 
     pub fn get_file_backed_start_offset(&self) -> usize {
         self.drained_data.len()
-    }
-
-    fn find_byte_seq_offset(hs: &[u8], needle: &[u8]) -> Option<usize> {
-        // Should I add a length delimiter parameter???
-        hs.windows(needle.len()).position(|w| w == needle)
     }
 
     pub fn get_segments(&self) -> HashMap<String, SegmentMappingData> {

@@ -117,8 +117,6 @@ impl MtkGfhHeader for GfhHeader {
         let gfh_file_info = GfhFileInfo::load(&data, offset)?;
         let gfh_hdr_size = gfh_file_info.get_gfh_header_total_size() as usize;
 
-        println!("Being parse loop..");
-
         loop {
             let Some(header_type) = GfhCommonHeader::load(data, offset) else {
                 // No more headers to parse

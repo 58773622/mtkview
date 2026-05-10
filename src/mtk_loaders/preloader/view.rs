@@ -1,6 +1,10 @@
-use crate::{BinaryViewResult, mtk_loaders::preloader::{MTKPL_MAGIC, MTKPreloaderLoader, gfh_headers::{
-        MtkGfhHeader, gfh_file_info::GfhFileInfo, gfh_types::GFH_TYPES_C_SRC,
-    }}};
+use crate::{
+    BinaryViewResult,
+    mtk_loaders::preloader::{
+        MTKPL_MAGIC, MTKPreloaderLoader,
+        gfh_headers::{MtkGfhHeader, gfh_file_info::GfhFileInfo, gfh_types::GFH_TYPES_C_SRC},
+    },
+};
 use base64::prelude::*;
 use binaryninja::{
     architecture::CoreArchitecture,
@@ -16,9 +20,7 @@ use binaryninja::{
     types::{CoreTypeParser, TypeParser},
 };
 use std::ops::Range;
-use tracing::{debug, info, warn};
-
-
+use tracing::{debug, info};
 
 pub struct MTKPreloaderBinaryViewType {
     view_type: BinaryViewType,
@@ -48,7 +50,7 @@ impl BinaryViewTypeBase for MTKPreloaderBinaryViewType {
 
         let magic_b64 = BASE64_STANDARD.encode(MTKPL_MAGIC);
         let data_buf = DataBuffer::from_base64(magic_b64.as_str());
-        let offset = if let Some(offset) = data.find_next_data(0x0, 0x1000, &data_buf) {
+        let offset = if let Some(offset) = data.find_next_data(0x0, data.end(), &data_buf) {
             offset
         } else {
             return false;
@@ -75,31 +77,31 @@ impl CustomBinaryViewType for MTKPreloaderBinaryViewType {
         builder: binaryninja::custom_binary_view::CustomViewBuilder<'builder, Self>,
     ) -> binaryninja::binary_view::Result<binaryninja::custom_binary_view::CustomView<'builder>>
     {
-        debug!("Creating MTKLoaderBinaryView from MTKPreloaderBinaryViewType");
+        debug!("Creating MTKPreloaderBinaryView from MTKPreloaderBinaryViewType");
 
-        let bv = builder.create::<MTKLoaderBinaryView>(data, ());
+        let bv = builder.create::<MTKPreloaderBinaryView>(data, ());
         bv
     }
 }
 
-unsafe impl CustomBinaryView for MTKLoaderBinaryView {
+unsafe impl CustomBinaryView for MTKPreloaderBinaryView {
     type Args = ();
 
     fn new(handle: &BinaryView, _args: &Self::Args) -> binaryninja::binary_view::Result<Self> {
-        MTKLoaderBinaryView::new(handle)
+        MTKPreloaderBinaryView::new(handle)
     }
 
     fn init(&mut self, _args: Self::Args) -> binaryninja::binary_view::Result<()> {
-        MTKLoaderBinaryView::init(self)
+        MTKPreloaderBinaryView::init(self)
     }
 }
 
-pub struct MTKLoaderBinaryView {
+pub struct MTKPreloaderBinaryView {
     inner: binaryninja::rc::Ref<BinaryView>,
     mtk_br_loader: MTKPreloaderLoader,
 }
 
-impl BinaryViewBase for MTKLoaderBinaryView {
+impl BinaryViewBase for MTKPreloaderBinaryView {
     fn address_size(&self) -> usize {
         4
     }
@@ -113,7 +115,7 @@ impl BinaryViewBase for MTKLoaderBinaryView {
     }
 }
 
-impl MTKLoaderBinaryView {
+impl MTKPreloaderBinaryView {
     fn new(view: &BinaryView) -> BinaryViewResult<Self> {
         let parent_view = view.parent_view().ok_or(())?;
         let read_buffer = parent_view
@@ -268,7 +270,7 @@ impl MTKLoaderBinaryView {
     }
 }
 
-impl AsRef<BinaryView> for MTKLoaderBinaryView {
+impl AsRef<BinaryView> for MTKPreloaderBinaryView {
     fn as_ref(&self) -> &BinaryView {
         &self.inner
     }

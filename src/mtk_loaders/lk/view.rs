@@ -1,6 +1,9 @@
-use crate::{BinaryViewResult, mtk_loaders::preloader::{MTKPL_MAGIC, MTKPreloaderLoader, gfh_headers::{
-        MtkGfhHeader, gfh_file_info::GfhFileInfo, gfh_types::GFH_TYPES_C_SRC,
-    }}};
+use crate::{
+    BinaryViewResult,
+    mtk_loaders::lk::lk_headers::{
+        MTKLK_HEADER_DEFAULT_LEN, MTKLK_MAGIC, MtkLkHeader, lk_types::LK_TYPES_C_SRC,
+    },
+};
 use base64::prelude::*;
 use binaryninja::{
     architecture::CoreArchitecture,
@@ -18,25 +21,23 @@ use binaryninja::{
 use std::ops::Range;
 use tracing::{debug, info, warn};
 
-
-
-pub struct MTKLittleKernelBinaryViewType {
+pub struct MTKLkBinaryViewType {
     view_type: BinaryViewType,
 }
 
-impl MTKLittleKernelBinaryViewType {
+impl MTKLkBinaryViewType {
     pub fn new(view_type: BinaryViewType) -> Self {
         Self { view_type }
     }
 }
 
-impl AsRef<BinaryViewType> for MTKLittleKernelBinaryViewType {
+impl AsRef<BinaryViewType> for MTKLkBinaryViewType {
     fn as_ref(&self) -> &BinaryViewType {
         &self.view_type
     }
 }
 
-impl BinaryViewTypeBase for MTKLittleKernelBinaryViewType {
+impl BinaryViewTypeBase for MTKLkBinaryViewType {
     fn is_deprecated(&self) -> bool {
         false
     }
@@ -44,63 +45,54 @@ impl BinaryViewTypeBase for MTKLittleKernelBinaryViewType {
         false
     }
     fn is_valid_for(&self, data: &BinaryView) -> bool {
-        return false;
-        let mut magic = Vec::<u8>::new();
+        let mut buf = Vec::<u8>::new();
 
-        let magic_b64 = BASE64_STANDARD.encode(MTKPL_MAGIC);
+        let magic_b64 = BASE64_STANDARD.encode(MTKLK_MAGIC);
         let data_buf = DataBuffer::from_base64(magic_b64.as_str());
-        let offset = if let Some(offset) = data.find_next_data(0x0, 0x1000, &data_buf) {
-            offset
-        } else {
+        let Some(offset) = data.find_next_data(0x0, data.end(), &data_buf) else {
             return false;
         };
 
-        data.read_into_vec(&mut magic, offset, 0x300);
-        match GfhFileInfo::load(&magic, 0) {
+        data.read_into_vec(&mut buf, offset, MTKLK_HEADER_DEFAULT_LEN);
+        match MtkLkHeader::load(&buf) {
             Some(_) => true,
             None => false,
-        } /*
-        if magic == MTKPL_MAGIC {
-        debug!("Raw Preloader is valid.");
-        return true;
         }
-        warn!("Valid for failure!");
-        false*/
     }
 }
 
-impl CustomBinaryViewType for MTKLittleKernelBinaryViewType {
+impl CustomBinaryViewType for MTKLkBinaryViewType {
     fn create_custom_view<'builder>(
         &self,
         data: &BinaryView,
         builder: binaryninja::custom_binary_view::CustomViewBuilder<'builder, Self>,
     ) -> binaryninja::binary_view::Result<binaryninja::custom_binary_view::CustomView<'builder>>
     {
-        debug!("Creating MTKLoaderBinaryView from MTKLittleKernelBinaryViewType");
+        debug!("Creating MTKLkBinaryView from MTKLkBinaryViewType");
 
-        let bv = builder.create::<MTKLoaderBinaryView>(data, ());
+        let bv = builder.create::<MTKLkBinaryView>(data, ());
         bv
     }
 }
 
-unsafe impl CustomBinaryView for MTKLoaderBinaryView {
+unsafe impl CustomBinaryView for MTKLkBinaryView {
     type Args = ();
 
     fn new(handle: &BinaryView, _args: &Self::Args) -> binaryninja::binary_view::Result<Self> {
-        MTKLoaderBinaryView::new(handle)
+        MTKLkBinaryView::new(handle)
     }
 
     fn init(&mut self, _args: Self::Args) -> binaryninja::binary_view::Result<()> {
-        MTKLoaderBinaryView::init(self)
+        MTKLkBinaryView::init(self)
     }
 }
 
-pub struct MTKLoaderBinaryView {
+pub struct MTKLkBinaryView {
     inner: binaryninja::rc::Ref<BinaryView>,
-    mtk_br_loader: MTKPreloaderLoader,
+    mtk_lk_loader: MTKLkLoader,
 }
 
-impl BinaryViewBase for MTKLoaderBinaryView {
+impl BinaryViewBase for MTKLkBinaryView {
     fn address_size(&self) -> usize {
         4
     }
@@ -114,16 +106,16 @@ impl BinaryViewBase for MTKLoaderBinaryView {
     }
 }
 
-impl MTKLoaderBinaryView {
+impl MTKLkBinaryView {
     fn new(view: &BinaryView) -> BinaryViewResult<Self> {
         let parent_view = view.parent_view().ok_or(())?;
         let read_buffer = parent_view
             .read_buffer(0, parent_view.len() as usize)
             .ok_or(())?;
-        let mtk_br_loader = MTKPreloaderLoader::new(read_buffer)?;
+        let mtk_lk_loader = MTKLkLoader::new(read_buffer)?;
         Ok(Self {
             inner: view.to_owned(),
-            mtk_br_loader,
+            mtk_lk_loader,
         })
     }
 
@@ -135,8 +127,8 @@ impl MTKLoaderBinaryView {
         let type_parser = CoreTypeParser::default();
         let parsed_types = type_parser
             .parse_types_from_source(
-                GFH_TYPES_C_SRC,
-                "gfh_types.h",
+                LK_TYPES_C_SRC,
+                "lk_types.h",
                 &default_platform,
                 &plat_type_container,
                 &[],
@@ -147,9 +139,9 @@ impl MTKLoaderBinaryView {
         self.set_default_arch(&default_arch);
         self.set_default_platform(&default_platform);
 
-        info!("{}", self.mtk_br_loader);
+        info!("{}", self.mtk_lk_loader);
 
-        for (_name, segment) in self.mtk_br_loader.get_segments() {
+        for (_name, segment) in self.mtk_lk_loader.get_segments() {
             let new_segment = Segment::builder(segment.mapped_addr_range.clone())
                 .parent_backing(segment.file_backing.clone())
                 .is_auto(true)
@@ -158,7 +150,7 @@ impl MTKLoaderBinaryView {
             self.add_segment(new_segment);
         }
 
-        for (name, section) in self.mtk_br_loader.get_sections() {
+        for (name, section) in self.mtk_lk_loader.get_sections() {
             let mut new_section = Section::builder(
                 section.name.clone(),
                 Range {
@@ -188,7 +180,7 @@ impl MTKLoaderBinaryView {
         // Define User Header Types (MOVE THIS CODE INTO THE SPECIFIC MTK HEADER PARSERS)
         let pt_clone = parsed_types.types.clone();
         for pt in parsed_types.types {
-            let Some(type_offset) = self.mtk_br_loader.get_type_addr(&pt.name.to_string()) else {
+            let Some(type_offset) = self.mtk_lk_loader.get_type_addr(&pt.name.to_string()) else {
                 continue;
             };
 
@@ -205,7 +197,7 @@ impl MTKLoaderBinaryView {
             let sym = Symbol::builder(
                 SymbolType::Data,
                 &name,
-                self.mtk_br_loader.get_image_load_addr() as u64 + type_offset as u64,
+                self.mtk_lk_loader.get_image_load_addr() as u64 + type_offset as u64,
             )
             .create();
             self.define_auto_symbol_with_type(&sym, &entry_forced_platform, Some(&*pt.ty))
@@ -217,7 +209,7 @@ impl MTKLoaderBinaryView {
             let sym = Symbol::builder(
                 SymbolType::Data,
                 &name,
-                self.mtk_br_loader.get_image_load_addr() as u64 + type_offset as u64,
+                self.mtk_lk_loader.get_image_load_addr() as u64 + type_offset as u64,
             )
             .create();
 
@@ -265,11 +257,11 @@ impl MTKLoaderBinaryView {
     */
 
     fn get_entry_point(&self) -> u64 {
-        self.mtk_br_loader.get_entry_point()
+        self.mtk_lk_loader.get_entry_point()
     }
 }
 
-impl AsRef<BinaryView> for MTKLoaderBinaryView {
+impl AsRef<BinaryView> for MTKLkBinaryView {
     fn as_ref(&self) -> &BinaryView {
         &self.inner
     }
