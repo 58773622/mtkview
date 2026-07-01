@@ -3,6 +3,7 @@ use binaryninja::{
     types::{CoreTypeParser, ParsedType, TypeParser, TypeParserResult},
 };
 
+#[allow(unused)]
 pub(crate) const LK_TYPES_C_SRC_UBOOT: &'static str = r#"
 /* LK image header */
 
@@ -81,6 +82,7 @@ impl LkCPlatformTypes {
         None
     }
 
+    #[allow(unused)]
     pub fn get_all_types(&self) -> Option<Vec<ParsedType>> {
         if !self.parsed_types.types.is_empty() {
             return Some(self.parsed_types.types.clone());

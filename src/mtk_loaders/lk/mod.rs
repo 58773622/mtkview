@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fmt, ops::Range};
 
-use binaryninja::{section, segment::SegmentFlags};
+use binaryninja::segment::SegmentFlags;
 use tracing::debug;
 
 use crate::{
@@ -103,17 +103,6 @@ pub(crate) struct LKRomSection {
 }
 
 impl LKRomSection {
-    pub fn full_size(&self) -> u64 {
-        self.header.get_full_size()
-    }
-
-    pub fn get_section_start(&self) -> u64 {
-        self.file_offset
-    }
-    pub fn get_section_end(&self) -> u64 {
-        self.file_offset + self.full_size()
-    }
-
     pub fn get_header_size(&self) -> u64 {
         self.header.header_size() as u64
     }

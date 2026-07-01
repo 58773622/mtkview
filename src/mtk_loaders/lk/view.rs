@@ -1,5 +1,5 @@
 use crate::mtk_loaders::lk::MTKLkLoader;
-use crate::mtk_loaders::lk::lk_types::{LK_TYPES_LK_HEADER, LkCPlatformTypes};
+use crate::mtk_loaders::lk::lk_types::LkCPlatformTypes;
 use crate::{BinaryViewResult, mtk_loaders::lk::lk_headers::MtkLkHeader};
 use binaryninja::symbol::Symbol;
 use binaryninja::symbol::SymbolType;
@@ -12,7 +12,6 @@ use binaryninja::{
     platform::Platform,
     section::Section,
     segment::Segment,
-    types::{CoreTypeParser, TypeParser},
 };
 use tracing::{debug, info};
 
@@ -118,19 +117,7 @@ impl MTKLkBinaryView {
         };
         let default_arch = CoreArchitecture::by_name(def_arch).ok_or(())?;
         let default_platform = Platform::by_name(def_plat).ok_or(())?;
-        let plat_type_container = default_platform.type_container();
-        let type_parser = CoreTypeParser::default();
-        let parsed_types = type_parser
-            .parse_types_from_source(
-                LK_TYPES_LK_HEADER,
-                "lk_types.h",
-                &default_platform,
-                &plat_type_container,
-                &[],
-                &[],
-                "",
-            )
-            .unwrap();
+
         self.set_default_arch(&default_arch);
         self.set_default_platform(&default_platform);
 

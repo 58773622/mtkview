@@ -1,5 +1,5 @@
 use binaryninja::{
-    binary_view::{BinaryViewBase, BinaryViewEventType, BinaryViewExt, register_binary_view_event},
+    binary_view::{BinaryViewBase, BinaryViewExt},
     command::{Command, register_command},
     custom_binary_view::register_view_type,
     settings::Settings,
@@ -60,14 +60,6 @@ pub extern "C" fn CorePluginInit() -> bool {
         "MTK Little Kernel",
         mtk_loaders::lk::view::MTKLkBinaryViewType::new,
     );
-
-    /*
-    let md1rom_hook = LkMd1RomHookContext::new(0, 0);
-    register_binary_view_event(
-        BinaryViewEventType::BinaryViewInitialAnalysisCompletionEvent,
-        md1rom_hook,
-    );
-    */
 
     register_command(
         "mtkview\\Print Load Information",

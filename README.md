@@ -1,10 +1,10 @@
 # mtkview
 
-Will load GFH preloader binaries
+Loads GFH preloader binaries and MTK Little Kernel partitions. Still WIP but working atm!
 
 Load MTK binaries:
 - Preloaders
-- LK (Todo)
+- LK
 
 ## Build and install yourself
 
@@ -23,3 +23,6 @@ After building and installing, open Binary Ninja and select a partition or a raw
 ## Screenshot
 
 ![Demo](docs/screen.png)
+
+## Kudos
+- Thanks to ([@R0rt1z2](https://github.com/R0rt1z2/) for letting me pick your brain about MTK stuff.
