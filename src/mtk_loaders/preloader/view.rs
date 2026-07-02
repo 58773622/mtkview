@@ -60,13 +60,7 @@ impl BinaryViewTypeBase for MTKPreloaderBinaryViewType {
         match GfhFileInfo::load(&magic, 0) {
             Some(_) => true,
             None => false,
-        } /*
-        if magic == MTKPL_MAGIC {
-        debug!("Raw Preloader is valid.");
-        return true;
         }
-        warn!("Valid for failure!");
-        false*/
     }
 }
 

@@ -25,4 +25,4 @@ After building and installing, open Binary Ninja and select a partition or a raw
 ![Demo](docs/screen.png)
 
 ## Kudos
-- Thanks to ([@R0rt1z2](https://github.com/R0rt1z2/) for letting me pick your brain about MTK stuff.
+- Thanks to [@R0rt1z2](https://github.com/R0rt1z2/) for letting me pick your brain about MTK stuff.
