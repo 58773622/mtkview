@@ -1,14 +1,13 @@
 # mtkview
 
-Master branch = Binja Stable
-
-Dev branch = Binja Dev
-
 Loads GFH preloader binaries and MTK Little Kernel partitions. Still WIP but working atm!
+
+- Master branch = Binja Stable
+- Dev branch = Binja Dev
 
 Please report issues!
 
-Load MTK binaries:
+### Load MTK binaries:
 - Preloaders
 - LK
 
