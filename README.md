@@ -1,6 +1,11 @@
 # mtkview
 
+Master branch = Binja Stable
+Dev branch = Binja Dev
+
 Loads GFH preloader binaries and MTK Little Kernel partitions. Still WIP but working atm!
+
+Please report issues!
 
 Load MTK binaries:
 - Preloaders
@@ -18,7 +23,7 @@ Load MTK binaries:
 
 ## How to use
 
-After building and installing, open Binary Ninja and select a partition or a raw MTK Preloader binary. The binja view should say `MTK <Binary Type>`.
+After building and installing, open Binary Ninja and select a partition or a raw MTK Preloader/LK binary. The binja view should say `MTK <Binary Type>`.
 
 ## Screenshot
 
